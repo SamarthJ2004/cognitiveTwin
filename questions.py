@@ -1,117 +1,145 @@
+"""
+Question bank for the stated-self assessment.
+Drawn from: Big Five (IPIP), Need for Cognition, Moral Foundations,
+            Cognitive Reflection Test, Need for Closure.
+
+Each question is designed to reveal not just WHAT the person thinks
+but HOW they think — their reasoning style, not just their opinions.
+
+Categories map directly to graph node types:
+- thinking_style  → Pattern nodes
+- reasoning       → Pattern nodes + Belief nodes
+- values          → Belief nodes
+- emotional       → Emotion nodes
+- self_concept    → Belief nodes (high confidence, self-reported)
+"""
+
 QUESTIONS = [
 
-    # --- Thinking Style (Need for Cognition) ---
+    # ── thinking style ─────────────────────────────────────────────────────────
+    # Reveals: how they process information, deliberate vs intuitive
     {
-        "id": "nfc_1",
+        "id": "ts_1",
         "category": "thinking_style",
-        "question": "When you face a complex problem, what do you usually do first?",
-        "hint": "(e.g. research it, go with your gut, talk it through with someone, break it into parts)"
+        "question": "When you face a complex problem, what do you actually do first — not what you think you should do, but what you actually do?",
     },
     {
-        "id": "nfc_2",
+        "id": "ts_2",
         "category": "thinking_style",
-        "question": "Do you enjoy thinking through difficult problems even when they don't affect you directly? Why or why not?"
+        "question": "Do you enjoy thinking through difficult problems even when they have no practical use for you? Be honest.",
     },
     {
-        "id": "nfc_3",
+        "id": "ts_3",
         "category": "thinking_style",
-        "question": "When you make a decision, do you prefer having all the information first, or do you act and adjust as you go?"
+        "question": "When making a decision, do you prefer having all the information first — or do you act and adjust as you go?",
+    },
+    {
+        "id": "ts_4",
+        "category": "thinking_style",
+        "question": "How long can you sit with an unanswered question before it bothers you?",
     },
 
-    # --- Reasoning & Cognitive Reflection ---
+    # ── reasoning (Cognitive Reflection Test style) ────────────────────────────
+    # Reveals: intuitive vs analytical, how they handle being wrong
     {
-        "id": "crt_1",
+        "id": "r_1",
         "category": "reasoning",
-        "question": "A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost?",
-        "hint": "(answer freely, explain your thinking)"
+        "question": "A bat and a ball together cost $1.10. The bat costs $1 more than the ball. How much is the ball? Walk me through your thinking — not just the answer.",
+        "hint": "(this is less about maths, more about how you reason)"
     },
     {
-        "id": "crt_2",
+        "id": "r_2",
         "category": "reasoning",
-        "question": "If it takes 5 machines 5 minutes to make 5 widgets, how long would it take 100 machines to make 100 widgets? Walk me through your thinking."
+        "question": "Think of a time you were completely confident about something and turned out to be wrong. What happened in your head when you realized it?",
     },
     {
-        "id": "crt_3",
+        "id": "r_3",
         "category": "reasoning",
-        "question": "When you realize you were wrong about something, how do you typically react? Be honest."
+        "question": "When someone gives you a compelling argument against something you believe, what usually happens — do you update, resist, or something else?",
     },
 
-    # --- Values & Moral Foundations ---
+    # ── values and moral foundations ───────────────────────────────────────────
+    # Reveals: what the person actually weighs when making moral judgments
     {
-        "id": "mfq_1",
+        "id": "v_1",
         "category": "values",
-        "question": "What matters more to you: that everyone follows the same rules, or that outcomes are fair even if the rules need bending? Give an example if you can."
+        "question": "What matters more to you: that everyone follows the same rules, or that outcomes are fair — even if the rules have to bend? Give a real example if you can.",
     },
     {
-        "id": "mfq_2",
+        "id": "v_2",
         "category": "values",
-        "question": "How do you feel about loyalty — to friends, family, or a group — when it conflicts with doing what you think is right?"
+        "question": "Think of something you consider morally wrong that doesn't directly harm anyone. What is it and why does it feel wrong?",
     },
     {
-        "id": "mfq_3",
+        "id": "v_3",
         "category": "values",
-        "question": "Think of something you find morally wrong but that doesn't directly harm anyone. What is it, and why does it feel wrong to you?"
+        "question": "When loyalty to someone you care about conflicts with doing what you think is right — what do you actually do? Not what you think you should do.",
+    },
+    {
+        "id": "v_4",
+        "category": "values",
+        "question": "What's one belief you hold that most people around you would disagree with?",
     },
 
-    # --- Big Five: Openness ---
+    # ── openness ───────────────────────────────────────────────────────────────
+    # Reveals: tolerance for ambiguity, intellectual curiosity, change
     {
-        "id": "b5_o1",
+        "id": "o_1",
         "category": "openness",
-        "question": "How do you feel about trying things that have no guaranteed outcome — new ideas, creative projects, unfamiliar experiences?"
+        "question": "Have you changed your mind about something important in the last two years? What shifted — was it new information, an experience, or something else?",
     },
     {
-        "id": "b5_o2",
+        "id": "o_2",
         "category": "openness",
-        "question": "When someone challenges one of your core beliefs with a good argument, what usually happens inside your head?"
+        "question": "How do you feel about starting things that might not work out? Not the rational answer — the gut feeling.",
     },
 
-    # --- Big Five: Conscientiousness ---
+    # ── emotional patterns ─────────────────────────────────────────────────────
+    # Reveals: emotional regulation, self-awareness, recurring emotional states
     {
-        "id": "b5_c1",
-        "category": "conscientiousness",
-        "question": "Describe how you approach a project with a deadline. What does your process look like from start to finish?"
+        "id": "e_1",
+        "category": "emotional",
+        "question": "When something goes badly — failure, rejection, loss — what does the first 24 hours look like internally? What's the loop in your head?",
+    },
+    {
+        "id": "e_2",
+        "category": "emotional",
+        "question": "Is there a recurring feeling or worry that shows up across different parts of your life? Describe the pattern, not just one instance.",
+    },
+    {
+        "id": "e_3",
+        "category": "emotional",
+        "question": "How comfortable are you with conflict — do you seek it, avoid it, or does it depend? What does it depend on?",
     },
 
-    # --- Big Five: Agreeableness ---
+    # ── self concept ───────────────────────────────────────────────────────────
+    # Reveals: self-awareness, blind spots in their self-model
     {
-        "id": "b5_a1",
-        "category": "agreeableness",
-        "question": "How comfortable are you with conflict? Do you tend to avoid it, engage it head-on, or something else?"
-    },
-
-    # --- Big Five: Neuroticism / Emotional Pattern ---
-    {
-        "id": "b5_n1",
-        "category": "emotional_pattern",
-        "question": "When things go badly — a failure, rejection, or loss — what is your typical internal experience in the first 24 hours?"
-    },
-    {
-        "id": "b5_n2",
-        "category": "emotional_pattern",
-        "question": "Is there a recurring fear or worry that shows up in your life? You don't have to name it specifically — just describe the pattern."
-    },
-
-    # --- Belief Rigidity (Need for Closure) ---
-    {
-        "id": "nfc_close_1",
-        "category": "belief_rigidity",
-        "question": "How long can you sit comfortably with an unanswered question — not knowing the outcome of something important to you?"
-    },
-    {
-        "id": "nfc_close_2",
-        "category": "belief_rigidity",
-        "question": "Have you changed your mind about something you believed strongly in the past 2 years? What shifted?"
-    },
-
-    # --- Self-concept ---
-    {
-        "id": "self_1",
+        "id": "sc_1",
         "category": "self_concept",
-        "question": "In one paragraph: how do you think your closest friend would describe the way you think?"
+        "question": "How do you think a close friend who is honest with you would describe the way you think — not your personality, specifically your thinking style?",
     },
     {
-        "id": "self_2",
+        "id": "sc_2",
         "category": "self_concept",
-        "question": "What is a pattern in your own thinking or behavior that you have noticed but struggle to change?"
+        "question": "What is a pattern in your own thinking or behavior that you have noticed but find hard to change?",
     },
+    {
+        "id": "sc_3",
+        "category": "self_concept",
+        "question": "What do you think you are wrong about right now — something you currently believe that future you might look back on and cringe at?",
+    },
+]
+
+
+# ── checkin questions (fallback only) ──────────────────────────────────────────
+# These are used only if Claude fails to generate dynamic ones.
+# Normally generate_checkin_questions() in analyze.py creates personalized ones.
+
+FALLBACK_CHECKIN = [
+    "What was the most interesting decision you made today — big or small?",
+    "Did anything today surprise you or go differently than you expected?",
+    "What are you avoiding right now, and why?",
+    "What did you spend time on today that felt genuinely useful?",
+    "Did you change your mind about anything today?",
 ]
