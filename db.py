@@ -35,6 +35,7 @@ def save_belief(session, user_id, text, self_type, confidence=0.7, date=None):
     SET b.self_type = $self_type,
         b.confidence= $confidence,
         b.date = $date
+    MERGE (u)-[:HOLDS]->(b)
     """, uid=user_id, text=text, self_type=self_type, confidence=confidence, date=date)
 
 
@@ -42,7 +43,7 @@ def save_pattern(session, user_id, text, self_type, source=None, date=None):
     # Pattern : a ruccuring behaviour or acitivity, how he does and not what he thinks
     session.run("""
     MATCH (u:User {id: $uid})
-    MERGE (p:Patter {text: $text})
+    MERGE (p:Pattern {text: $text})
     SET p.self_type = $self_type,
         p.source = $source,
         p.date = $date

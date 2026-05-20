@@ -19,9 +19,10 @@ def _parse_json(text):
 
 def _call(prompt, max_tokens=800):
     response = ai.chat.completions.create(
-        model="claude-sonnet-4-6",
+        model="gpt-4o-mini",
         max_tokens=max_tokens,
-        messages=[{"role": "user", "content": prompt}]
+        messages=[{"role": "user", "content": prompt}],
+        response_format={"type": "json_object"}
     )
     return response.choices[0].message.content
 
