@@ -6,7 +6,7 @@ load_dotenv()
 
 driver = GraphDatabase.driver(
     "bolt://localhost:7687",
-    auth=(os.getenv("NEO4J_USER", "neo4j"), os.getenv("NEO4J_PASS"))
+    auth=(os.getenv("NEO4J_USER", "neo4j"), os.getenv("NEO4J_PASS", ""))
 )
 
 
