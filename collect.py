@@ -150,7 +150,29 @@ def get_terminal_history(limit=300):
 
 
 def get_app_usage():
-    return
+    src = Path.home() / "Library/Application Support/Knowledge/knowledgeC.db"
+
+    if not src.exists():
+        return []
+
+    try:
+        rows = _read_sqlite_history(
+            src,
+            """
+            SELECT
+                ZVALUESTRING AS app,
+                ROUND(SUM(ZENDDATE - ZSTARTDATE)/ 60.0, 2) AS minutes
+            FROM ZOBJECT
+            WHERE ZSTREAMNAME = '/app/usage'
+            GROUP BY ZVALUESTRING
+            ORDER BY minutes DESC
+            LIMIT 20;
+            """
+        )
+        return [{"app": r[0], "minutes": int(r[1])} for r in rows if int(r[1])]
+    except Exception as e:
+        print("Error: ", e)
+        return []
 
 
 def get_running_apps():
