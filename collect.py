@@ -5,13 +5,12 @@ Brave History
 Bash History
 Zsh History
 App Usage
+Sleep Wake Cycles
 
 Run separately from main.py:
     python collect.py your_name
 """
 
-import json
-import os
 import sys
 from urllib.parse import urlparse, parse_qs
 from datetime import datetime, timedelta
@@ -19,9 +18,10 @@ from pathlib import Path
 import sqlite3
 import shutil
 import re
-from openai import OpenAI
 import db
 from collections import Counter
+from analyze import analyze_behavioral_data
+import subprocess
 
 TODAY = datetime.now().strftime("%Y-%m-%d")
 
@@ -206,61 +206,114 @@ def get_running_apps():
     return
 
 
-def analyze_behavioral_data(data_summary, stated_profile_text):
-    ai = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+def get_sleep_wake_data(days=7):
+    """
+    Reads macOS power management logs via `pmset -g log`.
+    Extracts sleep and wake events to calculate:
+    - average sleep time
+    - average wake time
+    - sleep duration
+    - sleep consistency (do they sleep at the same time?)
 
-    prompt = f"""
-    You are analyzing someone's real digital behavior to build the behavioral layer of their cognitive profile.
+    No permissions needed — pmset is a standard macOS tool.
+    """
+    result = subprocess.run(
+        "pmset -g log | grep -E 'Entering Sleep state|Wake from Deep Idle' | grep -vi darkwake",
+        shell=True,
+        capture_output=True,
+        text=True
+    )
+    lines = result.stdout.splitlines()
 
-Their STATED profile (what they say about themselves):
-{stated_profile_text}
+    since = datetime.now() - timedelta(days=days)
+    events = []
 
-Their BEHAVIORAL data (what they actually do):
-{json.dumps(data_summary, indent=2)}
+    for line in lines:
+        # pmset log format: "2024-01-15 23:45:12 +0530 Sleep ..."
+        # or:               "2024-01-15 07:23:45 +0530 Wake  ..."
+        match = re.match(
+            r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) [+-]\d{4}\s+(Sleep|Wake)",
+            line
+        )
+        if not match:
+            continue
 
-Extract cognitive signals. Return ONLY a JSON object:
-{{
-  "beliefs": [
-    {{
-      "text": "a belief that their BEHAVIOR reveals — not what they said, what they DO implies",
-      "confidence": 0.0-1.0
-    }}
-  ],
-  "patterns": [
-    "a specific recurring behavioral pattern visible in the data — be precise, not generic"
-  ],
-  "topics": [
-    "specific topics they actually spend time on — prefer precise over broad"
-  ],
-  "contradictions": [
-    {{
-      "text": "describe a specific conflict between their stated profile and their actual behavior",
-      "self_a": "stated",
-      "self_b": "behavioral",
-      "confidence": 0.0-1.0
-    }}
-  ],
-  "summary": "2 sentences — what does this person ACTUALLY do vs what they say they do?"
-}}
+        try:
+            dt = datetime.strptime(match.group(1), "%Y-%m-%d %H:%M:%S")
+            event_type = match.group(2)
+        except ValueError:
+            continue
 
-Rules:
-- behavioral beliefs come from patterns of action, not their words
-- be specific: not 'uses social media a lot' but 'spends significant time on video content despite claiming to prefer reading'
-- contradictions only if genuinely present — compare against the stated profile above
-- Return ONLY valid JSON, no markdown"""
+        if dt >= since:
+            events.append({"type": event_type, "time": dt})
 
-    response = ai.chat.completions.create(
-        model="gpt-4o-mini",
-        max_tokens=1200,
-        messages=[{"role": "user", "content": prompt}]
+    if not events:
+        return None
+
+    # pair sleep/wake events
+    sleep_sessions = []
+    last_sleep = None
+
+    for event in events:
+        if event["type"] == "Sleep" and last_sleep == None:
+            last_sleep = event["time"]
+        elif event["type"] == "Wake" and last_sleep:
+            duration_hrs = (event["time"] - last_sleep).total_seconds() / 3600
+            if 2 < duration_hrs < 14:   # filter out short naps and outliers
+                sleep_sessions.append({
+                    "sleep_time": last_sleep.strftime("%H:%M"),
+                    "wake_time": event["time"].strftime("%H:%M"),
+                    "sleep_minutes": last_sleep.hour * 60 + last_sleep.minute,
+                    "wake_minute": event["time"].hour * 60 + event["time"].minute,
+                    "duration_hrs": round(duration_hrs, 2),
+                })
+            last_sleep = None
+
+    if not sleep_sessions:
+        return None
+
+    # need to update this with sin cos based average for correct value
+    avg_sleep_minute = sum(s["sleep_minutes"] for s in sleep_sessions) / len(sleep_sessions)
+    avg_wake_minute = sum(s["wake_minute"] for s in sleep_sessions) / len(sleep_sessions)
+    avg_duration = sum(s["duration_hrs"] for s in sleep_sessions) / len(sleep_sessions)
+
+    # consistency = low std deviation in sleep time = consistent schedule
+    import statistics
+
+    sleep_hours = [
+        s["sleep_minutes"] / 60
+        for s in sleep_sessions
+    ]
+
+    consistency = (
+        "consistent"
+        if len(sleep_hours) > 2 and statistics.stdev(sleep_hours) < 1.5
+        else "irregular"
     )
 
-    text = response.choices[0].message.content.strip()
-    if text.startswith("```"):
-        text = text.split("```")[1]
-        if text.startswith("json"):
-            text = text[4:]
-    return json.loads(text.strip())
+    def minutes_to_hhmm(minutes):
+        hours = int(minutes // 60) % 24
+        mins = int(minutes % 60)
+        return f"{hours:02d}:{mins:02d}"
+
+    avg_sleep_hr = avg_sleep_minute / 60
+    avg_wake_hr = avg_wake_minute / 60
+
+    return {
+        "sessions": sleep_sessions[-7:],
+        "avg_sleep_time": minutes_to_hhmm(avg_sleep_minute),
+        "avg_wake_time": minutes_to_hhmm(avg_wake_minute),
+        "avg_duration_hrs": round(avg_duration, 2),
+        "schedule": consistency,
+        "chronotype":
+            "night owl"
+            if avg_sleep_hr >= 23 or avg_sleep_hr <= 3
+            else (
+                "early riser"
+                if avg_sleep_hr <= 22 and avg_wake_hr <= 7
+                else "average"
+        ),
+    }
 
 
 def store_behavioral_signals(session, user_id, signals):
@@ -292,6 +345,7 @@ def run_collection(user_id):
     data_summary["browser_titles"] = get_brave_history()
     data_summary["terminal_commands"] = get_terminal_history()
     data_summary["app_usage"] = get_app_usage()
+    data_summary["sleep_wake"] = get_sleep_wake_data()
 
     if not data_summary:
         err("No data collected.")
