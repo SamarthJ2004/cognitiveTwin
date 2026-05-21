@@ -21,6 +21,7 @@ import shutil
 import re
 from openai import OpenAI
 import db
+from collections import Counter
 
 TODAY = datetime.now().strftime("%Y-%m-%d")
 
@@ -36,6 +37,28 @@ SENSITIVE_PATTERNS = [
     r"ghp_[A-Za-z0-9]+",     # GitHub tokens
     r"AKIA[0-9A-Z]+",        # AWS keys
 ]
+
+APP_NAME_MAP = {
+    "com.apple.dt.Xcode": "Xcode",
+    "com.google.Chrome": "Chrome",
+    "com.brave.Browser": "Brave",
+    "com.microsoft.VSCode": "VS Code",
+    "com.apple.Terminal": "Terminal",
+    "com.tinyspeck.slackmacgap": "Slack",
+    "com.spotify.client": "Spotify",
+    "com.apple.MobileSMS": "Messages",
+    "com.apple.mail": "Mail",
+    "com.googlecode.iterm2": "iTerm",
+    "tv.jellyfin.player": "Jellyfin Media Player",
+    "com.apple.Music": "Apple Music",
+    "com.apple.finder": "Finder",
+    "com.google.antigravity": "Antigravity",
+    "org.videolan.vlc": "VLC",
+    "com.colliderli.iina": "IINA",
+    "com.apple.systempreferences": "System Settings",
+    "org.qbittorrent.qBittorrent": "qBittorrent",
+    "net.whatsapp.WhatsApp": "WhatsApp"
+}
 
 
 def step(label): print(f"\n  \033[94m→\033[0m  {label}")
@@ -78,7 +101,7 @@ def _prettify_google_url(url):
         return url
 
 
-def get_brave_history(days=7, limit=200):
+def get_brave_history(days=30, limit=200):
     # for Default Profile only
     src = Path.home() / "Library/Application Support/BraveSoftware/Brave-Browser/Default/History"
 
@@ -118,7 +141,9 @@ def get_brave_history(days=7, limit=200):
         """,
         (since_chrome, limit)
     )
-    return [r[0] for r in rows if r[0]]
+
+    title_freq = Counter([r[0] for r in rows if r[0]])
+    return [{"title": t, "visits": c} for t, c in title_freq.most_common(50)]
 
 
 def _sanitize_command(cmd):
@@ -128,9 +153,6 @@ def _sanitize_command(cmd):
     for pattern in SENSITIVE_PATTERNS:
         if re.search(pattern, lower, re.IGNORECASE):
             return "[REDACTED SENSITIVE COMMAND]"
-
-    # Hide long suspicious strings
-    cmd = re.sub(r'([A-Za-z0-9_\-]{24,})', '[REDACTED]', cmd)
 
     return cmd
 
@@ -174,7 +196,7 @@ def get_app_usage():
             LIMIT 20;
             """
         )
-        return [{"app": r[0], "minutes": int(r[1])} for r in rows if (int(r[1]) > 5)]
+        return [{"app": APP_NAME_MAP.get(r[0], r[0]), "minutes": int(r[1])} for r in rows if (int(r[1]) > 5)]
     except Exception as e:
         print("Error: ", e)
         return []
@@ -274,8 +296,6 @@ def run_collection(user_id):
     data_summary["browser_titles"] = get_brave_history()
     data_summary["terminal_commands"] = get_terminal_history()
     data_summary["app_usage"] = get_app_usage()
-
-    print(data_summary)
 
     if not data_summary:
         err("No data collected.")
