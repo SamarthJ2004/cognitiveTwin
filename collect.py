@@ -112,7 +112,7 @@ def get_brave_history(days=30, limit=200):
     chrome_epoch = datetime(1601, 1, 1)
 
     since = datetime.now() - timedelta(days=days)
-    since_chrome = int((since-chrome_epoch).total_seconds() * 1_000_000)
+    since_chrome = int((since - chrome_epoch).total_seconds() * 1_000_000)
 
     # rows = _read_sqlite_history(
     #     src,
@@ -203,10 +203,6 @@ def get_app_usage():
 
 
 def get_running_apps():
-    return
-
-
-def get_apple_music_taste():
     return
 
 
@@ -319,12 +315,12 @@ def run_collection(user_id):
         store_behavioral_signals(session, user_id, signals)
         ok("Behavioral layer updated")
 
-    print(f"\n\033[93mBehavioral summary:\033[0m")
+    print("\n\033[93mBehavioral summary:\033[0m")
     print(f"  {signals.get('summary', '')}")
 
     contradictions = signals.get("contradictions", [])
     if contradictions:
-        print(f"\n\033[91mContradictions with your stated self:\033[0m")
+        print("\n\033[91mContradictions with your stated self:\033[0m")
         for c in contradictions:
             conf = c.get("confidence", 0)
             warn(f"({conf:.0%} confidence) {c['text']}")
