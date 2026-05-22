@@ -6,11 +6,14 @@ Bash History
 Zsh History
 App Usage
 Sleep Wake Cycles
+App Switching Daemon
+Typing Daemon
 
 Run separately from main.py:
     python collect.py your_name
 """
 
+import json
 import sys
 from urllib.parse import urlparse, parse_qs
 from datetime import datetime, timedelta
@@ -18,12 +21,14 @@ from pathlib import Path
 import sqlite3
 import shutil
 import re
+import analyze_behaviour
+from collect_api import get_github_data
 import db
 from collections import Counter
-from analyze import analyze_behavioral_data
 import subprocess
 
 TODAY = datetime.now().strftime("%Y-%m-%d")
+DATA_DIR = Path.home() / ".cognitivetwin"
 
 SENSITIVE_PATTERNS = [
     r"api[_-]?key",
@@ -316,7 +321,20 @@ def get_sleep_wake_data(days=7):
     }
 
 
-def store_behavioral_signals(session, user_id, signals):
+def get_daemon_data():
+    # read appswitch.json and typing.json
+    result = {}
+    for name, filename in [("app_switching", "appswitch.json"), ("typing_patterns", "typing.json")]:
+        path = DATA_DIR / filename
+        if path.exists():
+            try:
+                result[name] = json.loads(path.read_text())
+            except Exception:
+                pass
+    return result if result else None
+
+
+def store_signals(session, user_id, signals):
     # store behavioral signals to Neo4j with self_type='behavioral'
 
     for b in signals.get("beliefs", []):
@@ -346,6 +364,8 @@ def run_collection(user_id):
     data_summary["terminal_commands"] = get_terminal_history()
     data_summary["app_usage"] = get_app_usage()
     data_summary["sleep_wake"] = get_sleep_wake_data()
+    data_summary["github"] = get_github_data()
+    data_summary.update(get_daemon_data())
 
     if not data_summary:
         err("No data collected.")
@@ -360,13 +380,13 @@ def run_collection(user_id):
 
         step("Analyzing behavioral patterns with OpenAI...")
         try:
-            signals = analyze_behavioral_data(data_summary, stated_text)
+            signals = analyze_behaviour.run_pipeline(data_summary, stated_text)
         except Exception as e:
             err(f"Analysis failed: {e}")
             return
 
         step("Storing to graph...")
-        store_behavioral_signals(session, user_id, signals)
+        store_signals(session, user_id, signals)
         ok("Behavioral layer updated")
 
     print("\n\033[93mBehavioral summary:\033[0m")

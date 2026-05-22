@@ -14,20 +14,10 @@ def header(text):
     print(f"{'─' * 52}")
 
 
-def dim(text):
-    print(f"  \033[90m{text}\033[0m")
-
-
-def ok(text):
-    print(f"  \033[92m✓\033[0m  {text}")
-
-
-def warn(text):
-    print(f"  \033[93m⚡\033[0m {text}")
-
-
-def err(text):
-    print(f"  \033[91m✗\033[0m  {text}")
+def dim(text): print(f"  \033[90m{text}\033[0m")
+def ok(text): print(f"  \033[92m✓\033[0m  {text}")
+def warn(text): print(f"  \033[93m⚡\033[0m {text}")
+def err(text): print(f"  \033[91m✗\033[0m  {text}")
 
 
 def show_question(index, total, q):

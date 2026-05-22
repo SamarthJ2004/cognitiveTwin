@@ -4,7 +4,6 @@ collect API based behavioural data
 Sources:
   - GitHub
   - Spotify
-  - Sleep/Wake
 
 Run separately from main.py:
     python collect_api.py your_name
@@ -13,22 +12,18 @@ Setup:
   GitHub  → create token at github.com/settings/tokens (read:user, repo)
             add GITHUB_TOKEN and GITHUB_USERNAME to .env
 
-  Last.fm : will do this for music analysis
-
   Spotify directly can be done using Premium Accounts only
   Spotify → create app at developer.spotify.com
             add SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, SPOTIFY_REDIRECT_URI to .env
             first run will open browser for OAuth — after that it caches the token
 """
 
-import json
 import os
 from datetime import datetime
 from pathlib import Path
 from collections import Counter
 import requests
 from dotenv import load_dotenv
-from openai import OpenAI
 import base64
 # import spotipy
 # from spotipy.oauth2 import SpotifyOAuth
@@ -38,8 +33,6 @@ load_dotenv()
 TODAY = datetime.now().strftime("%Y-%m-%d")
 DATA_DIR = Path.home() / ".cognitivetwin"
 DATA_DIR.mkdir(exist_ok=True)
-
-ai = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
 def step(label): print(f"\n  \033[94m→\033[0m  {label}")
@@ -144,6 +137,3 @@ def get_github_data():
         "coding_time": time_buckets,
         "event_types": dict(event_types),
     }
-
-
-print(json.dumps(get_github_data()))
