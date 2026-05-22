@@ -166,6 +166,15 @@ def run_checkin(session, user_id):
         except Exception as e:
             err(f"Could not store: {e}")
 
+    try:
+        dim("\nGenerating today's insight...")
+        updated_profile = db.get_profile(session, user_id)
+        insight = analyze.generate_insight(db.format_profile(updated_profile))
+        print("\n\033[93mToday's insight:\033[0m")
+        print(f"  {insight}\n")
+    except Exception as e:
+        err(f"Could not generate insight: {e}")
+
 
 def run_twin_query(session, user_id):
     profile = db.get_profile(session, user_id)
@@ -200,12 +209,10 @@ def view_profile(session, user_id):
     header(f"Profile — {user_id}")
     print(db.format_profile(profile))
 
-    # surface contradictions prominently if any
     if profile["contradictions"]:
-        print(f"\n  \033[91m{len(profile['contradictions'])
-                             } contradiction(s) detected\033[0m")
-        for c in profile["contradictions"]:
-            warn(c["text"])
+        total = len(profile["contradictions"])
+        confirmed = sum(1 for c in profile["contradictions"] if (c.get("count") or 1) > 1)
+        print(f"\n  \033[91m{total} contradiction(s) — {confirmed} confirmed across multiple sessions\033[0m")
     print()
 
 

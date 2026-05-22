@@ -1,8 +1,10 @@
 import os
 from neo4j import GraphDatabase
 from dotenv import load_dotenv
+from difflib import SequenceMatcher
 
 load_dotenv()
+SIMILARITY_THRESHOLD = 0.70
 
 driver = GraphDatabase.driver(
     "bolt://localhost:7687",
@@ -26,9 +28,37 @@ def save_answer(session, user_id, q_id, question, answer, category):
     """, uid=user_id, qid=q_id, question=question, answer=answer, category=category)
 
 
+def _is_similar(a, b):
+    return SequenceMatcher(None, a.lower(), b.lower()).ratio()
+
+
+def _is_duplicate(session, label, text_field, new_text, user_id):
+    rel_map = {
+        "Belief": "HOLDS",
+        "Pattern": "SHOWS",
+        "Contradiction": "HAS",
+    }
+    rel = rel_map.get(label, "HOLDS")
+
+    result = session.run(
+        f"MATCH (u:User {{id: $uid}})-[:{rel}]->(n:{label}) RETURN n.{text_field} AS text",
+        uid=user_id
+    )
+    existing = [r["text"] for r in result if r["text"]]
+
+    for existing_text in existing:
+        if _is_similar(new_text, existing_text) >= SIMILARITY_THRESHOLD:
+            return True
+    return False
+
+
 def save_belief(session, user_id, text, self_type, confidence=0.7, date=None):
     # Belief is something the person claims to think or value.
     # self_type: "stated" | "behavioral" | "projected"
+
+    if _is_duplicate(session, "Belief", "text", text, user_id):
+        return
+
     session.run("""
     MATCH (u:User {id: $uid})
     MERGE (b:Belief {text: $text})
@@ -41,6 +71,10 @@ def save_belief(session, user_id, text, self_type, confidence=0.7, date=None):
 
 def save_pattern(session, user_id, text, self_type, source=None, date=None):
     # Pattern : a ruccuring behaviour or acitivity, how he does and not what he thinks
+
+    if _is_duplicate(session, "Pattern", "text", text, user_id):
+        return
+
     session.run("""
     MATCH (u:User {id: $uid})
     MERGE (p:Pattern {text: $text})
@@ -80,13 +114,48 @@ def save_contradiction(session, user_id, text, self_a, self_b,
     # Contradiction is a detected gap between two self types.
     # eg: difference in what you believe vs what you do
     # This is the most valuable node as it reveals blind spots.
+
+    # guard 1: no behavioral vs behavioral
+    valid_pairs = {
+        ("stated", "behavioral"), ("behavioral", "stated"),
+        ("stated", "projected"), ("projected", "stated"),
+    }
+    if (self_a, self_b) not in valid_pairs:
+        return
+
+    # guard 2: confidence threshold (low confidence: noise)
+    if confidence <= 0.70:
+        return
+
+    # guard 3: deduplication — check similarity against existing contradictions
+    result = session.run(
+        "MATCH (u:User {id: $uid})-[:HAS]->(c:Contradiction) RETURN c.text AS text, c.count AS count",
+        uid=user_id
+    )
+    for r in result:
+        if r["text"] and _is_similar(text, r["text"]) >= SIMILARITY_THRESHOLD:
+            # increase the cound and a bit of confidence
+            session.run("""
+                MATCH (u:User {id: $uid})-[:HAS]->(c:Contradiction {text: $existing})
+                SET c.count      = coalesce(c.count, 1) + 1,
+                    c.confidence = CASE
+                        WHEN c.confidence < 0.95
+                        THEN round(c.confidence + 0.03, 2)
+                        ELSE 0.95
+                    END,
+                    c.last_seen  = $date
+            """, uid=user_id, existing=r["text"], date=date)
+            return
+
     session.run("""
         MATCH (u:User {id: $uid})
         MERGE (c:Contradiction {text: $text})
         SET c.self_a      = $self_a,
             c.self_b      = $self_b,
             c.confidence  = $confidence,
-            c.date        = $date
+            c.count       = 1,
+            c.date        = $date,
+            c.last_seen   = $date
         MERGE (u)-[:HAS]->(c)
     """, uid=user_id, text=text, self_a=self_a, self_b=self_b,
                 confidence=confidence, date=date)
@@ -105,7 +174,7 @@ def get_profile(session, user_id):
             collect(DISTINCT {text: p.text, self_type: p.self_type, source: p.source}) as patterns,
             collect(DISTINCT {name: t.name, self_type: t.self_type}) as topics,
             collect(DISTINCT {name: e.name, self_type: e.self_type, trigger: e.trigger}) as emotions,
-            collect(DISTINCT {text: c.text, self_a: c.self_a, self_b: c.self_b}) as contradictions
+            collect(DISTINCT {text: c.text, self_a: c.self_a, self_b: c.self_b, confidence: c.confidence, count: c.count}) as contradictions
     """, uid=user_id)
 
     record = result.single()
@@ -187,11 +256,26 @@ def format_profile(profile):
                 e['trigger']}" if e.get("trigger") else ""
             lines.append(f"  - {e['name']}{trigger}")
 
-    # contradictions — very very important
+    # contradictions — sorted by count (most confirmed first), capped at 7
     if profile["contradictions"]:
-        lines.append("\n!! CONTRADICTIONS (gaps between selves):")
-        for c in profile["contradictions"]:
-            lines.append(f"  ⚡ [{c.get('self_a', '?')} vs {
-                         c.get('self_b', '?')}] {c['text']}")
+        # sort by confirmation count descending
+        sorted_c = sorted(
+            profile["contradictions"],
+            key=lambda c: c.get("count") or 1,
+            reverse=True
+        )
+        top = sorted_c[:7]
+        total = len(sorted_c)
+
+        lines.append(f"\n!! CONTRADICTIONS ({total} total, showing top {len(top)}):")
+        for c in top:
+            count = c.get("count") or 1
+            conf = c.get("confidence") or 0
+            # strength bar: how many times this contradiction has been confirmed
+            strength = "●" * min(count, 5) + "○" * (5 - min(count, 5))
+            lines.append(
+                f"  ⚡ [{c.get('self_a', '?')} vs {c.get('self_b', '?')}]"
+                f"  {strength}  ({conf:.0%})  {c['text']}"
+            )
 
     return "\n".join(lines)
