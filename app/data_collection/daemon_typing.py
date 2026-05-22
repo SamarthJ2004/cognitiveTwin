@@ -55,14 +55,16 @@ def on_press(key):
     now = time.time()
 
     if key == keyboard.Key.backspace:
-        key_type = "backspace"
+        # key_type = "backspace"
         state["backspace_count"] += 1
     elif key == keyboard.Key.space or key == keyboard.Key.enter:
-        key_type = "word_boundary"
+        pass
+        # key_type = "word_boundary"
     elif hasattr(key, "char") and key.char:
-        key_type = "character"
+        pass
+        # key_type = "character"
     else:
-        key_type = "modifier"   # shift, ctrl, etc — skip
+        # key_type = "modifier"   # shift, ctrl, etc — skip
         return
 
     state["total_keys"] += 1
@@ -97,12 +99,6 @@ def on_press(key):
     if now - state["last_save"] > SAVE_INTERVAL:
         _save()
         state["last_save"] = now
-
-
-def on_release(key):
-    # stop listener on Escape — for debugging only
-    # comment this out in production to keep it always running
-    pass
 
 
 def _close_session():
@@ -247,7 +243,7 @@ def main():
     signal.signal(signal.SIGINT, shutdown)
     signal.signal(signal.SIGTERM, shutdown)
 
-    with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
+    with keyboard.Listener(on_press=on_press) as listener:
         listener.join()
 
 

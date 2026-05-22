@@ -22,7 +22,6 @@ def _call(prompt, max_tokens=800):
         model="gpt-4o-mini",
         max_tokens=max_tokens,
         messages=[{"role": "user", "content": prompt}],
-        response_format={"type": "json_object"}
     )
     return response.choices[0].message.content
 

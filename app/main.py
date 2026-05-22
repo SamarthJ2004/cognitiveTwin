@@ -1,9 +1,9 @@
-from questions import FALLBACK_CHECKIN, QUESTIONS
+from app.questions import FALLBACK_CHECKIN, QUESTIONS
 from datetime import datetime
 import sys
 import random
-import analyze
-import db
+from app.data_analysis import analyze
+import app.db as db
 
 TODAY = datetime.now().strftime("%Y-%m-%d")
 

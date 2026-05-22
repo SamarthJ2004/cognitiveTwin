@@ -21,9 +21,9 @@ from pathlib import Path
 import sqlite3
 import shutil
 import re
-import analyze_behaviour
+from app.data_analysis import analyze_behaviour
 from collect_api import get_github_data
-import db
+import app.db as db
 from collections import Counter
 import subprocess
 

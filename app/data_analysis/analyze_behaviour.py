@@ -9,7 +9,6 @@ analyze_behavioral.py — Hierarchical behavioral analysis pipeline
   Stage 5 — Meta Synthesis             (all domain outputs + stated profile)
 
 Contradictions only happen at Stage 5.
-Each domain call operates on clean, relevant data only.
 """
 
 import json
@@ -24,8 +23,6 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 MODEL = "gpt-4o-mini"
 MAX_TOKENS = 1000
 
-
-# ── shared helper ──────────────────────────────────────────────────────────────
 
 def _call(prompt, max_tokens=MAX_TOKENS):
     resp = client.chat.completions.create(
@@ -42,7 +39,7 @@ def _call(prompt, max_tokens=MAX_TOKENS):
 
 
 def _has(data, *keys):
-    """Check if data_summary contains at least one of these keys."""
+    # Check if data_summary contains at least one of these keys.
     return any(k in data for k in keys)
 
 
@@ -248,13 +245,9 @@ Return ONLY valid JSON"""
 
 def synthesize(domain_outputs, stated_profile_text):
     """
-    The only stage that sees the stated profile.
-    The only stage that generates contradictions.
-
     Input: structured outputs from stages 1-4 + stated profile
     Output: beliefs, contradictions, meta_patterns, summary
     """
-    # build a clean summary of domain findings for the prompt
     domain_block = json.dumps(
         {k: v for k, v in domain_outputs.items() if v},
         indent=2
@@ -316,15 +309,7 @@ Rules:
     return _call(prompt, max_tokens=1500)
 
 
-# ── pipeline entry point ───────────────────────────────────────────────────────
-
 def run_pipeline(data_summary, stated_profile_text):
-    """
-    Main entry point called by collect.py and collect_api.py.
-    Runs all 5 stages, returns final synthesis output.
-
-    Stages that have no relevant data are skipped silently.
-    """
     print("    stage 1 — knowledge / curiosity...", end=" ", flush=True)
     knowledge = analyze_knowledge(data_summary)
     print("✓" if knowledge else "–")
@@ -352,6 +337,5 @@ def run_pipeline(data_summary, stated_profile_text):
     synthesis = synthesize(domain_outputs, stated_profile_text)
     print("✓")
 
-    # attach domain outputs for debugging / future use
     synthesis["_domains"] = domain_outputs
     return synthesis
