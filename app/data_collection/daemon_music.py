@@ -265,7 +265,7 @@ def save():
 
     skips = sum(1 for s in sessions if s["duration_s"] < 60)
 
-    skip_rate = round(skips / len(sessions), 2,)
+    skip_rate = (round(skips / len(sessions), 2) if sessions else 0)
 
     total_minutes = sum(s["duration_s"] for s in sessions) / 60
 

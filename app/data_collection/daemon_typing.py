@@ -13,7 +13,7 @@ Run in a separate terminal (keep it running):
     python daemon_typing.py
 
 Data saved to: ~/.cognitivetwin/typing.json
-Install dependency: pip install pynput
+Install dependency: pip install pynput pyobjc
 """
 
 import json

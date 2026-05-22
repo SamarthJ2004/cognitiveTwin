@@ -4,3 +4,4 @@ openai==2.37.0
 
 spotipy==2.26.0   # for spotify
 pynput==1.8.2     # for keyboard logging
+pyobjc==12.1      # needed by pynput(some frameworks)
