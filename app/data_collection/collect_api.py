@@ -3,7 +3,6 @@ collect API based behavioural data
 
 Sources:
   - GitHub
-  - Spotify
 
 Run separately from main.py:
     python collect_api.py your_name
@@ -11,11 +10,6 @@ Run separately from main.py:
 Setup:
   GitHub  → create token at github.com/settings/tokens (read:user, repo)
             add GITHUB_TOKEN and GITHUB_USERNAME to .env
-
-  Spotify directly can be done using Premium Accounts only
-  Spotify → create app at developer.spotify.com
-            add SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, SPOTIFY_REDIRECT_URI to .env
-            first run will open browser for OAuth — after that it caches the token
 """
 
 import os
