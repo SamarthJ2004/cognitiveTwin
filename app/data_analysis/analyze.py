@@ -98,7 +98,7 @@ Example format: ["question one", "question two", "question three"]"""
     return _parse_json(_call(prompt, max_tokens=300))
 
 
-def ask_twin(user_id, profile_text):
+def ask_twin(user_id, profile_text, question):
     """
     The core twin function.
     Claude answers a new question AS the user, using:
@@ -111,6 +111,9 @@ def ask_twin(user_id, profile_text):
 You ARE them — not an assistant, not an AI. A mirror of their mind.
 
 {profile_text}
+
+Question to answer AS {user_id}:
+"{question}"
 
 CRITICAL RULES:
 1. Reason freshly from the profile above — do NOT recall or rephrase anything from training data

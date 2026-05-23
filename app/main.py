@@ -191,7 +191,7 @@ def run_twin_query(session, user_id):
     try:
         profile_text = db.format_profile(profile)
         # raw_answers = db.get_raw_answers(session, user_id)
-        response = analyze.ask_twin(user_id, profile_text)
+        response = analyze.ask_twin(user_id, profile_text, question)
 
         print(f"\n\033[93m{user_id}:\033[0m")
         print(f"  {response}\n")

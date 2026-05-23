@@ -107,15 +107,23 @@ TRACK_SCRIPT = '''
 '''
 
 SPOTIFY_SCRIPT = f'''
-tell application "Spotify"
-{TRACK_SCRIPT}
+tell application "System Events"
+    if exists process "Spotify" then
+        tell application "Spotify"
+        {TRACK_SCRIPT}
+        end tell
+    end if
 end tell
 return ""
 '''
 
 APPLE_MUSIC_SCRIPT = f'''
-tell application "Music"
-{TRACK_SCRIPT}
+tell application "System Events"
+    if exists process "Music" then
+        tell application "Music"
+        {TRACK_SCRIPT}
+        end tell
+    end if
 end tell
 return ""
 '''

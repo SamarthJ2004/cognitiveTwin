@@ -324,7 +324,7 @@ def get_sleep_wake_data(days=7):
 def get_daemon_data():
     # read appswitch.json and typing.json
     result = {}
-    for name, filename in [("app_switching", "appswitch.json"), ("typing_patterns", "typing.json")]:
+    for name, filename in [("app_switching", "appswitch.json"), ("typing_patterns", "typing.json"), ("music", "music.json")]:
         path = DATA_DIR / filename
         if path.exists():
             try:

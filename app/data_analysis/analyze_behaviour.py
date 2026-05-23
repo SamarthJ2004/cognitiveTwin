@@ -3,7 +3,7 @@ analyze_behavioral.py — Hierarchical behavioral analysis pipeline
 
 5-stage pipeline:
   Stage 1 — Knowledge / Curiosity      (browser history)
-  Stage 2 — Engineering / Workstyle    (zsh, github)
+  Stage 2 — Engineering / Workstyle    (zsh, github, music)
   Stage 3 — Productivity / Attention   (app switching, app usage, typing)
   Stage 4 — Lifestyle / Circadian      (sleep/wake, temporal patterns)
   Stage 5 — Meta Synthesis             (all domain outputs + stated profile)
@@ -101,7 +101,7 @@ def analyze_engineering(data):
     Input:  terminal_commands, github
     Output: engineering_traits, workflow_patterns, execution_style, technical_depth_signals
     """
-    if not _has(data, "terminal_commands", "github"):
+    if not _has(data, "terminal_commands", "github", "music"):
         return {}
 
     sections = []
@@ -114,6 +114,10 @@ def analyze_engineering(data):
     if "github" in data:
         gh = data["github"]
         sections.append(f"GitHub:\n{json.dumps(gh, indent=2)}")
+
+    if "music" in data:
+        music = data["music"]
+        sections.append(f"Music:\n{json.dumps(music, indent=2)}")
 
     prompt = f"""You are analyzing someone's engineering behavior from their terminal history and GitHub activity.
 
