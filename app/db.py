@@ -183,7 +183,8 @@ def get_profile(session, user_id):
 
     # filter out empty nodes (OPTIONAL MATCH returns nulls)
     def clean(lst, key):
-        return [x for x in lst if x.get(key)]
+        items = [x for x in lst if x.get(key)]
+        return sorted(items, key=lambda x: x.get("date") or "", reverse=True)
 
     return {
         "beliefs": clean(record["beliefs"], "text"),
@@ -198,7 +199,7 @@ def get_raw_answers(session, user_id):
     result = session.run("""
         MATCH (u:User {id: $uid})-[:ANSWERED]->(a:Answer)
         RETURN a.question as question, a.text as answer, a.category as category
-        ORDER BY a.category
+        ORDER BY a.question_id DESC
     """, uid=user_id)
 
     return [

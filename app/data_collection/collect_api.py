@@ -82,7 +82,21 @@ def get_github_data():
     if not repos:
         return None
 
-    languages = Counter(r["language"] for r in repos if r.get("language"))
+    primary_lang = Counter(r["language"] for r in repos if r.get("language"))
+
+    all_languages: Counter = Counter()
+    for r in repos[:10]:
+        lang_data = _github_get(f"/repos/{username}/{r['name']}/languages", token)
+        if lang_data and isinstance(lang_data, dict):
+            # lang_data = {"Python": 12345, "Rust": 6789, ...} (bytes per language)
+            all_languages.update(lang_data)
+
+    # normalise to percentages so byte counts don't dominate
+    total_bytes = sum(all_languages.values()) or 1
+    language_pct = {
+        lang: round(bytes_ / total_bytes * 100, 1)
+        for lang, bytes_ in all_languages.most_common(10)
+    }
 
     repo_summaries = []
     for r in repos[:5]:
@@ -127,7 +141,8 @@ def get_github_data():
 
     return {
         "repos": repo_summaries,
-        "language_distribution": dict(languages.most_common(8)),
+        "language_distribution": language_pct,
+        "primary_language_by_repo": dict(primary_lang.most_common(8)),
         "coding_time": time_buckets,
         "event_types": dict(event_types),
     }

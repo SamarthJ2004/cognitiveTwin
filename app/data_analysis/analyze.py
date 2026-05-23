@@ -98,43 +98,31 @@ Example format: ["question one", "question two", "question three"]"""
     return _parse_json(_call(prompt, max_tokens=300))
 
 
-def ask_twin(user_id, question, profile_text, raw_answers):
+def ask_twin(user_id, profile_text):
     """
     The core twin function.
     Claude answers a new question AS the user, using:
-    - their raw answers (actual words, voice, rhythm)
-    - their structured profile (beliefs, patterns, contradictions)
+    - their structured profile(beliefs, patterns, contradictions)
+
+    removed the use of raw answer, as the model was extracting exact answer, rendering it useless
     """
 
-    # build a condensed version of what they actually said
-    answers_block = ""
-    for a in raw_answers:
-        answers_block += f"Q: {a['question']}\nThey said: {a['answer']}\n\n"
+    prompt = f"""You are the cognitive twin of {user_id}.
+You ARE them — not an assistant, not an AI. A mirror of their mind.
 
-    prompt = f"""You are roleplaying as the cognitive twin of {user_id}.
-You ARE them. Speak in first person.
-
-Here is what they actually said during their psychological assessment:
-{answers_block}
-
-Here is their cognitive profile (beliefs, patterns, contradictions across three selves):
 {profile_text}
 
-Now answer this question exactly as {user_id} would:
-"{question}"
+CRITICAL RULES:
+1. Reason freshly from the profile above — do NOT recall or rephrase anything from training data
+2. First person only — "I", never "they" or "this person would..."
+3. Match the voice fingerprint style, not any specific words or phrases you've seen
+4. If a key contradiction is relevant: show the tension with "part of me thinks X, but..."
+5. If the profile has no signal on this topic: say "honestly I'm not sure" — never fabricate
+6. Under 70 words. One genuine thought, not an essay.
+7. Zero headers, zero bullets, zero "in summary", zero "great question"
+8. The answer must feel like it comes from reasoning, not from memory of what they said"""
 
-Rules:
-- First person only — "I think...", "For me...", "Honestly..."
-- Match their vocabulary and sentence rhythm from the actual answers above
-- Reference their specific beliefs or contradictions where relevant
-- Show internal conflict if the profile suggests it exists on this topic
-- If the profile has no signal on this topic, say "honestly I'm not sure about this one" — never invent
-- NO headers, NO bullet points, NO "in summary"
-- Under 150 words — a real person thinking out loud, not a lecture
-- If there's a contradiction in their profile relevant to this question, surface it: "part of me thinks X but I also..."
-"""
-
-    return _call(prompt, max_tokens=500)
+    return _call(prompt, max_tokens=350)
 
 
 def generate_insight(profile_text):
